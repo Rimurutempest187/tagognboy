@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ╔══════════════════════════════════════════════╗
-# ║   🃏 Card Character Collection Telegram Bot  ║
+# ║   🃏 Card Character Collection Telegram Bot   ║
 # ║   Version: 2.0  |  python-telegram-bot 20.x  ║
 # ╚══════════════════════════════════════════════╝
 
@@ -8,7 +8,7 @@ import asyncio
 import logging
 import os
 import sys
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, time
 
 from telegram import Update, BotCommand
 from telegram.ext import (
@@ -29,7 +29,6 @@ from config import (
 # Handlers
 from handlers.user_handlers    import balance_cmd, daily_cmd, shop_cmd, buy_cmd
 from handlers.game_handlers    import slots_cmd, basket_cmd, wheel_cmd
-# bot.py ထဲက Import ကို ဒီလို ပြင်ပါ
 from handlers.card_handlers    import (
     catch_cmd,
     set_cmd,
@@ -43,6 +42,9 @@ from handlers.admin_handlers   import (
     upload_cmd, uploadvd_cmd, edit_cmd, delete_cmd, confirmdelete_cmd,
     setdrop_cmd, stats_cmd, backup_cmd, restore_cmd, confirmrestore_cmd
 )
+# Note: Ensure this exists in handlers/admin_handlers.py
+from handlers.admin_handlers import handle_upload_media 
+
 from handlers.owner_handlers   import (
     addsudo_cmd, addcoin_cmd, sudolist_cmd,
     broadcast_cmd, allclear_cmd, systemcheck_cmd
@@ -64,7 +66,7 @@ log = logging.getLogger(__name__)
 # ─────────────────────────────────────────────
 async def start_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     u = update.effective_user
-    user = await db.get_or_create_user(u.id, u.username or "", u.first_name or "")
+    await db.get_or_create_user(u.id, u.username or "", u.first_name or "")
     await db.ensure_weekly_entry(u.id, u.username or u.first_name or "")
 
     text = (
@@ -157,15 +159,13 @@ async def help_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 # ─────────────────────────────────────────────
 async def settitle_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     u_obj = update.effective_user
-    user  = await db.get_or_create_user(u_obj.id, u_obj.username or "", u_obj.first_name or "")
-
     if not ctx.args:
         await update.message.reply_text("❓ Usage: <code>/settitle &lt;title_id&gt;</code>", parse_mode="HTML")
         return
 
     title_key = ctx.args[0]
     my_titles = await db.get_user_titles(u_obj.id)
-    earned    = {t["title_key"] for t in my_titles}
+    earned = {t["title_key"] for t in my_titles}
 
     if title_key not in earned:
         await update.message.reply_text(f"❌ You haven't earned title <code>{title_key}</code> yet!", parse_mode="HTML")
@@ -184,7 +184,7 @@ async def settitle_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 # WEEKLY RESET JOB
 # ─────────────────────────────────────────────
 async def weekly_reset_job(ctx: ContextTypes.DEFAULT_TYPE):
-    """Runs every Monday to reset weekly leaderboard and reward top player."""
+    """Runs to check if it's Monday to reset weekly leaderboard."""
     today = date.today()
     if today.weekday() != 0:   # 0 = Monday
         return
@@ -195,7 +195,6 @@ async def weekly_reset_job(ctx: ContextTypes.DEFAULT_TYPE):
         winner = top[0]
         await db.add_coins(winner["user_id"], 2000, tx_type="weekly_winner",
                           note="Weekly leaderboard winner!")
-        log.info(f"🏆 Weekly winner: {winner.get('username','?')} | +2000 coins")
         try:
             await ctx.bot.send_message(
                 chat_id=winner["user_id"],
@@ -272,7 +271,6 @@ async def on_startup(app: Application):
     os.makedirs(BACKUP_DIR, exist_ok=True)
     await set_commands(app)
 
-    # Notify owner
     try:
         await app.bot.send_message(
             chat_id=OWNER_ID,
@@ -296,9 +294,6 @@ def main():
     if not BOT_TOKEN:
         log.critical("❌ BOT_TOKEN not set in .env!")
         sys.exit(1)
-
-    if OWNER_ID == 0:
-        log.warning("⚠️  OWNER_ID not set. Owner commands won't work.")
 
     log.info("🃏 Starting Card Collection Bot...")
 
@@ -362,6 +357,7 @@ def main():
     app.add_handler(CommandHandler("systemcheck",  systemcheck_cmd))
 
     # ── Media upload handler ────────────────────
+    # Make sure 'handle_upload_media' is imported from admin_handlers
     app.add_handler(MessageHandler(
         filters.PHOTO | filters.VIDEO | filters.Document.ALL | filters.ANIMATION,
         handle_upload_media
@@ -371,10 +367,8 @@ def main():
     app.add_error_handler(error_handler)
 
     # ── Scheduled Jobs ─────────────────────────
-    job_queue = app.job_queue
-    if job_queue:
-        # Weekly reset - check every 24 hours at midnight UTC
-        job_queue.run_daily(weekly_reset_job, time=__import__("datetime").time(0, 0, 0))
+    if app.job_queue:
+        app.job_queue.run_daily(weekly_reset_job, time=time(0, 0, 0))
         log.info("✅ Weekly reset job scheduled")
 
     log.info("🤖 Bot is running! Press Ctrl+C to stop.")
