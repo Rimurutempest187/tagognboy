@@ -41,7 +41,7 @@ from handlers.social_handlers  import givecoin_cmd, marry_cmd, divorce_cmd, frie
 from handlers.ranking_handlers import top_cmd, titles_cmd, missions_cmd, achievements_cmd
 from handlers.admin_handlers   import (
     upload_cmd, uploadvd_cmd, edit_cmd, delete_cmd, confirmdelete_cmd,
-    setdrop_cmd, stats_cmd, bac kup_cmd, restore_cmd, confirmrestore_cmd
+    setdrop_cmd, stats_cmd, backup_cmd, restore_cmd, confirmrestore_cmd
 )
 from handlers.owner_handlers   import (
     addsudo_cmd, addcoin_cmd, sudolist_cmd,
