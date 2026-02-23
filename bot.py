@@ -29,14 +29,19 @@ from config import (
 # Handlers
 from handlers.user_handlers    import balance_cmd, daily_cmd, shop_cmd, buy_cmd
 from handlers.game_handlers    import slots_cmd, basket_cmd, wheel_cmd
+# bot.py ထဲက Import ကို ဒီလို ပြင်ပါ
 from handlers.card_handlers    import (
-    catch_cmd, set_cmd, removeset_cmd, inventory_cmd, handle_upload_media
+    catch_cmd,
+    set_cmd,
+    removeset_cmd,
+    inventory_cmd
 )
+
 from handlers.social_handlers  import givecoin_cmd, marry_cmd, divorce_cmd, friends_cmd
 from handlers.ranking_handlers import top_cmd, titles_cmd, missions_cmd, achievements_cmd
 from handlers.admin_handlers   import (
     upload_cmd, uploadvd_cmd, edit_cmd, delete_cmd, confirmdelete_cmd,
-    setdrop_cmd, stats_cmd, backup_cmd, restore_cmd, confirmrestore_cmd
+    setdrop_cmd, stats_cmd, bac kup_cmd, restore_cmd, confirmrestore_cmd
 )
 from handlers.owner_handlers   import (
     addsudo_cmd, addcoin_cmd, sudolist_cmd,
